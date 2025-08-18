@@ -109,17 +109,21 @@ where
 
         let len = self.data[0].len();
 
-        let copy = self.clone();
+        // let copy = self.clone();
 
-        let mut pair: Vec<(&T, &usize)> = copy.data[0].iter().zip(copy.labels[0].iter()).collect();
+        // let mut pair: Vec<(&T, &usize)> = copy.data[0].iter().zip(copy.labels[0].iter()).collect();
+        //
+
+        let mut indexes: Vec<usize> = (0..len).collect();
 
         for epoch in 0..10 {
             let training_amount = 0.1 * f64::from(epoch + 1) * len as f64;
             let training_amount = training_amount as usize;
-            let (shuffled, _) = pair.partial_shuffle(&mut rng, training_amount);
-            for (image, label) in shuffled.iter() {
-                let predict = self.predict(image);
-                self.backpropagation(&predict, label);
+            let (shuffled, _) = indexes.partial_shuffle(&mut rng, training_amount);
+            for index in shuffled.iter() {
+                let predict = self.predict(*index, 0);
+                let label = self.labels[0][*index];
+                self.backpropagation(&predict, &label);
             }
 
             let (cnt, len) = self.validate();
@@ -132,7 +136,7 @@ where
 
         for x in 0..self.data[1].len() {
             if self
-                .predict(&self.data[1][x].clone())
+                .predict(x, 1)
                 .iter()
                 .enumerate()
                 .max_by(|a, b| a.1.partial_cmp(b.1).unwrap())
@@ -147,10 +151,12 @@ where
         (count, self.data[2].len())
     }
 
-    fn predict(&mut self, t: &T) -> Vec<f64> {
-        let input = t.flatten();
+    fn predict(&mut self, index: usize, set: usize) -> Vec<f64> {
+        let input = self.data[set][index].flatten();
 
-        self.activations.push(input.clone());
+        if set == 0 {
+            self.activations.push(input.clone());
+        }
 
         let mut layer = input;
 
@@ -158,7 +164,9 @@ where
             let tmp = matrix_multiply(&[layer.clone()], &self.weights[x]);
             layer = add_vec(&tmp.first().unwrap().clone(), &self.biases[x]);
 
-            self.z_values.push(layer.clone());
+            if set == 0 {
+                self.z_values.push(layer.clone());
+            }
 
             if x < self.num_hidden_layer + 1 {
                 for z in &mut layer {
@@ -168,7 +176,9 @@ where
                 layer = softmax(layer);
             }
 
-            self.activations.push(layer.clone());
+            if set == 0 {
+                self.activations.push(layer.clone());
+            }
         }
 
         layer
@@ -259,22 +269,31 @@ fn softmax(outputs: Vec<f64>) -> Vec<f64> {
 }
 
 fn matrix_multiply(layer: &[Vec<f64>], weight: &[Vec<f64>]) -> Vec<Vec<f64>> {
-    if layer[0].len() != weight.len() {
-        eprintln!(
-            "Dot Product length of args differ: layer {} does not equal weight {}",
-            layer[0].len(),
-            weight.len()
+    let layer_rows = layer.len();
+    let layer_cols = layer[0].len();
+    let weight_rows = weight.len();
+    let weight_cols = weight[0].len();
+
+    if layer_cols != weight_rows {
+        panic!(
+            "Dot Product length mismatch: layer cols ({}) != weight rows ({})",
+            layer_cols, weight_rows
         );
-        panic!();
     }
 
-    let mut result = vec![vec![0.0; weight[0].len()]; layer.len()];
+    let weight_t: Vec<Vec<f64>> = (0..weight_cols)
+        .map(|j| weight.iter().map(|row| row[j]).collect())
+        .collect();
 
-    for i in 0..layer.len() {
-        for j in 0..weight[0].len() {
-            for k in 0..weight.len() {
-                result[i][j] += layer[i][k] * weight[k][j];
-            }
+    let mut result = vec![vec![0.0; weight_cols]; layer_rows];
+
+    for (i, layer_row) in layer.iter().enumerate() {
+        for (j, weight_col) in weight_t.iter().enumerate() {
+            result[i][j] = layer_row
+                .iter()
+                .zip(weight_col.iter())
+                .map(|(a, b)| a * b)
+                .sum();
         }
     }
 
