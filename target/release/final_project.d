@@ -1,1 +1,0 @@
-/home/john/Code/intro-ai/final_project/target/release/final_project: /home/john/Code/intro-ai/final_project/src/digit.rs /home/john/Code/intro-ai/final_project/src/generic_lib.rs /home/john/Code/intro-ai/final_project/src/main.rs /home/john/Code/intro-ai/final_project/src/neural_network.rs

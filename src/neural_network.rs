@@ -118,7 +118,8 @@ where
             let training_amount = 0.1 * f64::from(epoch + 1) * len as f64;
             let training_amount = training_amount as usize;
             let (shuffled, _) = indexes.partial_shuffle(&mut rng, training_amount);
-            for index in shuffled.iter() {
+            let shuffled = shuffled.iter();
+            for index in shuffled {
                 let predict = self.predict(*index, 0);
                 let label = self.labels[0][*index];
                 self.backpropagation(&predict, &label, learning_rate);
