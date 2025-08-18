@@ -2,6 +2,7 @@ use std::f64::{self};
 
 use crate::generic_lib::HasPixels;
 use rand::{prelude::*, rng};
+use std::thread;
 
 #[derive(Clone)]
 pub struct NeuralNetwork<T> {
@@ -59,19 +60,19 @@ where
         }
         weights.push(last);
 
-        biases.push(Vec::new());
+        biases.push(Vec::with_capacity(num_hidden_node[0]));
         for _ in 0..num_hidden_node[0] {
             biases[0].push(rand::rng().random_range(-0.1..0.1));
         }
 
         for x in 0..num_hidden_layer - 1 {
-            biases.push(Vec::new());
+            biases.push(Vec::with_capacity(num_hidden_node[x + 1]));
             for _ in 0..num_hidden_node[x + 1] {
                 biases[x + 1].push(rand::rng().random_range(-0.1..0.1));
             }
         }
 
-        biases.push(Vec::new());
+        biases.push(Vec::with_capacity(num_output));
         for _ in 0..num_output {
             biases[num_hidden_layer].push(rand::rng().random_range(-0.1..0.1));
         }
