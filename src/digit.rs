@@ -10,13 +10,7 @@ impl Digit {
     pub fn new(input: String) -> Self {
         let mut pixels = [[' '; DIGIT_LENGTH]; DIGIT_HEIGHT];
         let input: Vec<char> = input.chars().collect();
-        // for y in 0..DIGIT_HEIGHT {
-        //     for x in 0..DIGIT_LENGTH {
-        //         let index = y * DIGIT_LENGTH + x;
-        //         pixels[y][x] = input[index];
-        //     }
-        // }
-        //
+
         for (y, row) in pixels.iter_mut().enumerate() {
             for (x, pixel) in row.iter_mut().enumerate() {
                 let index = y * DIGIT_LENGTH + x;

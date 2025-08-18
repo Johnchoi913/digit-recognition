@@ -32,27 +32,29 @@ where
         let mut biases: Vec<Vec<f64>> = Vec::new();
 
         let mut layer0 = vec![vec![0.0; num_hidden_node[0]]; num_input];
-        for i in 0..num_input {
-            for j in 0..num_hidden_node[0] {
-                layer0[i][j] = rand::rng().random_range(-0.1..0.1);
+
+        for layer in layer0.iter_mut() {
+            for node in layer.iter_mut() {
+                *node = rand::rng().random_range(-0.1..0.1);
             }
         }
+
         weights.push(layer0);
 
         for x in 1..num_hidden_layer {
             let mut hidden = vec![vec![0.0; num_hidden_node[x]]; num_hidden_node[x - 1]];
-            for i in 0..num_hidden_node[x - 1] {
-                for j in 0..num_hidden_node[x] {
-                    hidden[i][j] = rand::rng().random_range(-0.1..0.1);
+            for row in hidden.iter_mut() {
+                for node in row.iter_mut() {
+                    *node = rand::rng().random_range(-0.1..0.1);
                 }
             }
             weights.push(hidden);
         }
 
         let mut last = vec![vec![0.0; num_output]; num_hidden_node[num_hidden_layer - 1]];
-        for i in 0..num_hidden_node[num_hidden_layer - 1] {
-            for j in 0..num_output {
-                last[i][j] = rand::rng().random_range(-0.1..0.1);
+        for row in last.iter_mut() {
+            for node in row.iter_mut() {
+                *node = rand::rng().random_range(-0.1..0.1);
             }
         }
         weights.push(last);
@@ -117,7 +119,7 @@ where
             let (shuffled, _) = pair.partial_shuffle(&mut rng, training_amount);
             for (image, label) in shuffled.iter() {
                 let predict = self.predict(image);
-                self.backpropagation(&predict, *label);
+                self.backpropagation(&predict, label);
             }
 
             let (cnt, len) = self.validate();
@@ -189,9 +191,9 @@ where
                 self.weights[curr_layer_idx][0].len()
             ];
 
-            for j in 0..self.weights[curr_layer_idx].len() {
-                for k in 0..self.weights[curr_layer_idx][0].len() {
-                    transposed_weights[k][j] = self.weights[curr_layer_idx][j][k];
+            for (j, row) in transposed_weights.iter_mut().enumerate() {
+                for (k, node) in row.iter_mut().enumerate() {
+                    *node = self.weights[curr_layer_idx][k][j];
                 }
             }
 
