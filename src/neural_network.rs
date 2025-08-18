@@ -2,7 +2,7 @@ use std::f64::{self};
 
 use crate::generic_lib::HasPixels;
 use rand::{prelude::*, rng};
-use std::thread;
+use rayon::prelude::*;
 
 #[derive(Clone)]
 pub struct NeuralNetwork<T> {
@@ -19,6 +19,7 @@ impl<T> NeuralNetwork<T>
 where
     T: HasPixels,
     T: Clone,
+    T: std::marker::Sync,
 {
     pub fn new(
         t: Vec<Vec<T>>,
@@ -128,24 +129,27 @@ where
         }
     }
 
-    fn validate(&mut self) -> (usize, usize) {
-        let mut count = 0;
+    fn validate(&self) -> (usize, usize) {
+        let labels = self.labels[1].clone();
 
-        for x in 0..self.data[1].len() {
-            if self
-                .predict(x, 1)
-                .iter()
-                .enumerate()
-                .max_by(|a, b| a.1.partial_cmp(b.1).unwrap())
-                .map(|x| x.0)
-                .unwrap()
-                == self.labels[1][x]
-            {
-                count += 1;
-            }
-        }
+        let len = self.data[1].len();
 
-        (count, self.data[2].len())
+        let count = (0..len)
+            .into_par_iter()
+            .filter(|&x| {
+                let guess = self
+                    .predict_ref(x, 1)
+                    .iter()
+                    .enumerate()
+                    .max_by(|a, b| a.1.partial_cmp(b.1).unwrap())
+                    .map(|(i, _)| i)
+                    .unwrap();
+
+                guess == labels[x]
+            })
+            .count();
+
+        (count, len)
     }
 
     fn predict(&mut self, index: usize, set: usize) -> Vec<f64> {
@@ -175,6 +179,27 @@ where
 
             if set == 0 {
                 self.activations.push(layer.clone());
+            }
+        }
+
+        layer
+    }
+
+    fn predict_ref(&self, index: usize, set: usize) -> Vec<f64> {
+        let input = self.data[set][index].flatten();
+
+        let mut layer = input;
+
+        for x in 0..self.num_hidden_layer + 1 {
+            let tmp = matrix_multiply(&[layer.clone()], &self.weights[x]);
+            layer = add_vec(&tmp.first().unwrap().clone(), &self.biases[x]);
+
+            if x < self.num_hidden_layer + 1 {
+                for z in &mut layer {
+                    *z = relu(*z);
+                }
+            } else {
+                layer = softmax(layer);
             }
         }
 
