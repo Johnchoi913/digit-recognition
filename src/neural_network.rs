@@ -109,21 +109,17 @@ where
 
         let len = self.data[0].len();
 
-        // let copy = self.clone();
-
-        // let mut pair: Vec<(&T, &usize)> = copy.data[0].iter().zip(copy.labels[0].iter()).collect();
-        //
-
         let mut indexes: Vec<usize> = (0..len).collect();
 
         for epoch in 0..10 {
+            let learning_rate = 0.01 / (1.0 + 0.1 * epoch as f64);
             let training_amount = 0.1 * f64::from(epoch + 1) * len as f64;
             let training_amount = training_amount as usize;
             let (shuffled, _) = indexes.partial_shuffle(&mut rng, training_amount);
             for index in shuffled.iter() {
                 let predict = self.predict(*index, 0);
                 let label = self.labels[0][*index];
-                self.backpropagation(&predict, &label);
+                self.backpropagation(&predict, &label, learning_rate);
             }
 
             let (cnt, len) = self.validate();
@@ -184,9 +180,7 @@ where
         layer
     }
 
-    fn backpropagation(&mut self, prediction: &[f64], label: &usize) {
-        let learning_rate = 0.01;
-
+    fn backpropagation(&mut self, prediction: &[f64], label: &usize, learning_rate: f64) {
         let mut out_grad = prediction.to_owned();
         out_grad[*label] -= 1.0;
 

@@ -85,7 +85,7 @@ fn main() {
         digit_validation_label,
     ];
 
-    let mut digit_perceptron = NeuralNetwork::new(digit_data, data_labels, 1, vec![65]);
+    let mut digit_perceptron = NeuralNetwork::new(digit_data, data_labels, 1, vec![15]);
 
     digit_perceptron.start();
 }
